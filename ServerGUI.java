@@ -14,7 +14,6 @@ public class ServerGUI extends JFrame {
 
     public ServerGUI() {
 
-        // ====== FRAME ======
         setTitle("Auction Server");
         setSize(520, 560);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -22,13 +21,11 @@ public class ServerGUI extends JFrame {
         getContentPane().setBackground(new Color(245, 247, 250));
         setLayout(new BorderLayout());
 
-        // ====== TITLE ======
         JLabel title = new JLabel("AUCTION SERVER", SwingConstants.CENTER);
         title.setFont(new Font("Segoe UI", Font.BOLD, 22));
         title.setBorder(BorderFactory.createEmptyBorder(20, 10, 15, 10));
         add(title, BorderLayout.NORTH);
 
-        // ====== CARD PANEL (LEFT SIDE) ======
         RoundedPanel card = new RoundedPanel(22);
         card.setBackground(Color.WHITE);
         card.setLayout(new GridBagLayout());
@@ -71,12 +68,9 @@ public class ServerGUI extends JFrame {
         btnStartServer = createModernButton("Mulai Server");
         card.add(btnStartServer, gc);
 
-        // Wrap card inside leftPanel
         JPanel leftPanel = new JPanel(new BorderLayout());
         leftPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         leftPanel.add(card, BorderLayout.NORTH);
-
-        // ====== RIGHT PANEL (LOG AREA) ======
 
         areaLog = new JTextArea();
         areaLog.setEditable(false);
@@ -94,25 +88,16 @@ public class ServerGUI extends JFrame {
         rightPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         rightPanel.add(scroll, BorderLayout.CENTER);
 
-        // ====== SPLIT PANE (LEFT - RIGHT) ======
-        JSplitPane split = new JSplitPane(
-                JSplitPane.HORIZONTAL_SPLIT,
-                leftPanel,
-                rightPanel
-        );
-
-        split.setDividerLocation(400);     // width awal panel kiri
-        split.setResizeWeight(0.3);        // 30% kiri, 70% kanan
+        JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, rightPanel);
+        split.setDividerLocation(400);
+        split.setResizeWeight(0.3);
         split.setContinuousLayout(true);
         split.setOneTouchExpandable(true);
 
         add(split, BorderLayout.CENTER);
 
-        // ====== EVENT ======
         btnStartServer.addActionListener((ActionEvent e) -> startServer());
     }
-
-    // ======================== UI COMPONENT MAKER ========================
 
     private JLabel makeLabel(String text) {
         JLabel lbl = new JLabel(text);
@@ -130,19 +115,12 @@ public class ServerGUI extends JFrame {
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         btn.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) {
-                btn.setBackground(new Color(52, 113, 210));
-            }
-
-            public void mouseExited(MouseEvent e) {
-                btn.setBackground(new Color(66, 133, 244));
-            }
+            public void mouseEntered(MouseEvent e) { btn.setBackground(new Color(52, 113, 210)); }
+            public void mouseExited(MouseEvent e) { btn.setBackground(new Color(66, 133, 244)); }
         });
 
         return btn;
     }
-
-    // ======================== SERVER LOGIC ========================
 
     private void startServer() {
         String namaBarang = fieldNamaBarang.getText().trim();
@@ -150,10 +128,7 @@ public class ServerGUI extends JFrame {
         String durasiStr = fieldDurasi.getText().trim();
 
         if (namaBarang.isEmpty() || hargaStr.isEmpty() || durasiStr.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                    "Semua field harus diisi!",
-                    "Input Error",
-                    JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Semua field harus diisi!", "Input Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
@@ -162,15 +137,11 @@ public class ServerGUI extends JFrame {
             hargaAwal = Integer.parseInt(hargaStr);
             durasi = Integer.parseInt(durasiStr);
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this,
-                    "Harga awal dan durasi harus angka!",
-                    "Format Salah",
-                    JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Harga awal dan durasi harus angka!", "Format Salah", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
         btnStartServer.setEnabled(false);
-
         areaLog.append("=== SERVER DIMULAI ===\n");
         areaLog.append("Barang: " + namaBarang + "\n");
         areaLog.append("Harga Awal: Rp " + hargaAwal + "\n");
@@ -185,13 +156,11 @@ public class ServerGUI extends JFrame {
         }).start();
     }
 
-    // ======================== MAIN ========================
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             ServerGUI gui = new ServerGUI();
             gui.setVisible(true);
-
-            gui.setExtendedState(JFrame.MAXIMIZED_BOTH); // Fullscreen
+            gui.setExtendedState(JFrame.MAXIMIZED_BOTH);
         });
     }
 }
