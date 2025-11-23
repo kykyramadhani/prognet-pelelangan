@@ -70,7 +70,7 @@ public class SelectItemPanel extends JPanel {
 
         JButton btnJoin = new JButton("Ikut Lelang");
         btnJoin.setBackground(new Color(0, 105, 92));
-        btnJoin.setForeground(Color.WHITE);
+        btnJoin.setForeground(Color.BLACK);
         btnJoin.setFocusPainted(false);
 
         // Ketika dipilih, kirim SELECT ke server dan pindah ke AuctionPanel
