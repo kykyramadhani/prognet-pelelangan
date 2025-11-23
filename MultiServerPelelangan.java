@@ -6,17 +6,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.JTextArea;
 
-/**
- * MultiServerPelelangan (updated)
- * - expects BarangLelang in external file (your BarangLelang.java)
- * - accepts messages:
- *   NAME:<username>
- *   JOIN:<auctionId>   or SELECT:<auctionId>
- *   BID:<auctionId>:<name>:<amount>   (explicit)
- *   or if client already joined auction, a plain number line "30000" will be treated as bid
- *
- * - broadcasts UPDATE messages using BarangLelang.getUpdateMessage() which returns "UPDATE:harga:penawar"
- */
 public class MultiServerPelelangan {
 
     private ServerSocket serverSocket;

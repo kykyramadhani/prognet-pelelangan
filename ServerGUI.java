@@ -206,8 +206,6 @@ public class ServerGUI extends JFrame {
     }
 }
 
-/* Simple helper classes for rounded UI components below.
-   You can keep these in the same file or separate files. */
 class RoundedPanelServer extends JPanel {
     private int arc;
 
