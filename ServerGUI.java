@@ -28,7 +28,7 @@ public class ServerGUI extends JFrame {
         title.setBorder(BorderFactory.createEmptyBorder(20, 10, 15, 10));
         add(title, BorderLayout.NORTH);
 
-        // ====== CARD PANEL ======
+        // ====== CARD PANEL (LEFT SIDE) ======
         RoundedPanel card = new RoundedPanel(22);
         card.setBackground(Color.WHITE);
         card.setLayout(new GridBagLayout());
@@ -41,7 +41,6 @@ public class ServerGUI extends JFrame {
 
         Font font = new Font("Segoe UI", Font.PLAIN, 14);
 
-        // Label + TextField (Modern)
         gc.gridx = 0;
         gc.gridy = 0;
         card.add(makeLabel("Nama Barang:"), gc);
@@ -67,15 +66,18 @@ public class ServerGUI extends JFrame {
         fieldDurasi.setFont(font);
         card.add(fieldDurasi, gc);
 
-        // ====== BUTTON ======
         gc.gridy = 6;
         gc.insets = new Insets(18, 10, 10, 10);
         btnStartServer = createModernButton("Mulai Server");
         card.add(btnStartServer, gc);
 
-        add(card, BorderLayout.CENTER);
+        // Wrap card inside leftPanel
+        JPanel leftPanel = new JPanel(new BorderLayout());
+        leftPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        leftPanel.add(card, BorderLayout.NORTH);
 
-        // ====== LOG AREA ======
+        // ====== RIGHT PANEL (LOG AREA) ======
+
         areaLog = new JTextArea();
         areaLog.setEditable(false);
         areaLog.setFont(new Font("Consolas", Font.PLAIN, 13));
@@ -88,7 +90,23 @@ public class ServerGUI extends JFrame {
         JScrollPane scroll = new JScrollPane(areaLog);
         scroll.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-        add(scroll, BorderLayout.SOUTH);
+        JPanel rightPanel = new JPanel(new BorderLayout());
+        rightPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        rightPanel.add(scroll, BorderLayout.CENTER);
+
+        // ====== SPLIT PANE (LEFT - RIGHT) ======
+        JSplitPane split = new JSplitPane(
+                JSplitPane.HORIZONTAL_SPLIT,
+                leftPanel,
+                rightPanel
+        );
+
+        split.setDividerLocation(400);     // width awal panel kiri
+        split.setResizeWeight(0.3);        // 30% kiri, 70% kanan
+        split.setContinuousLayout(true);
+        split.setOneTouchExpandable(true);
+
+        add(split, BorderLayout.CENTER);
 
         // ====== EVENT ======
         btnStartServer.addActionListener((ActionEvent e) -> startServer());
@@ -111,11 +129,11 @@ public class ServerGUI extends JFrame {
         btn.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        // Hover Effect
         btn.addMouseListener(new MouseAdapter() {
             public void mouseEntered(MouseEvent e) {
                 btn.setBackground(new Color(52, 113, 210));
             }
+
             public void mouseExited(MouseEvent e) {
                 btn.setBackground(new Color(66, 133, 244));
             }
@@ -124,7 +142,7 @@ public class ServerGUI extends JFrame {
         return btn;
     }
 
-    // ======================== SERVER LOGIC (TIDAK DIUBAH) ========================
+    // ======================== SERVER LOGIC ========================
 
     private void startServer() {
         String namaBarang = fieldNamaBarang.getText().trim();
@@ -169,13 +187,11 @@ public class ServerGUI extends JFrame {
 
     // ======================== MAIN ========================
     public static void main(String[] args) {
-    SwingUtilities.invokeLater(() -> {
-        ServerGUI gui = new ServerGUI();
-        gui.setVisible(true);
+        SwingUtilities.invokeLater(() -> {
+            ServerGUI gui = new ServerGUI();
+            gui.setVisible(true);
 
-        // MAXIMIZE WINDOW
-        gui.setExtendedState(JFrame.MAXIMIZED_BOTH);
-    });
-}
-
+            gui.setExtendedState(JFrame.MAXIMIZED_BOTH); // Fullscreen
+        });
+    }
 }
