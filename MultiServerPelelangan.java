@@ -1,4 +1,3 @@
-// ===================== MultiServerPelelangan.java =====================
 import java.io.PrintWriter;
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -19,37 +18,25 @@ public class MultiServerPelelangan {
     private final Map<PrintWriter, String> clientAuctionMap = new HashMap<>();
     private final AtomicInteger auctionIdCounter = new AtomicInteger(1);
 
-    // ===================== START DARI GUI =====================
-    public static void startFromGUI(String namaBarang, int hargaAwal, int durasi, JTextArea areaLog) throws Exception {
-        MultiServerPelelangan server = new MultiServerPelelangan();
-
-        String auctionId = "ID" + server.auctionIdCounter.getAndIncrement();
-        BarangLelang barang = new BarangLelang(auctionId, namaBarang, hargaAwal, server);
-        server.currentAuctions.put(auctionId, barang);
-        server.auctionActiveStatus.put(auctionId, true);
+    // ===================== PUBLIK METHOD UNTUK GUI =====================
+    public void addAuctionFromGUI(String namaBarang, int hargaAwal, int durasi, JTextArea areaLog) {
+        String auctionId = "ID" + auctionIdCounter.getAndIncrement();
+        BarangLelang barang = new BarangLelang(auctionId, namaBarang, hargaAwal, this);
+        currentAuctions.put(auctionId, barang);
+        auctionActiveStatus.put(auctionId, true);
 
         areaLog.append("Barang terdaftar dengan ID: " + auctionId + "\n");
 
-        server.scheduler.schedule(() -> {
-            server.stopAuction(auctionId);
+        scheduler.schedule(() -> {
+            stopAuction(auctionId);
             javax.swing.SwingUtilities.invokeLater(() ->
                 areaLog.append("⏳ Lelang selesai untuk " + namaBarang + "\n")
             );
         }, durasi, TimeUnit.SECONDS);
-
-        new Thread(() -> {
-            try {
-                server.startServer();
-            } catch (Exception e) {
-                javax.swing.SwingUtilities.invokeLater(() ->
-                    areaLog.append("ERROR Server: " + e.getMessage() + "\n")
-                );
-            }
-        }).start();
     }
 
-    // ===================== SERVER NORMAL =====================
-    private void startServer() throws IOException {
+    // ===================== SERVER =====================
+    public void startServer() throws IOException {
         serverSocket = new ServerSocket(PORT);
         System.out.println("Server aktif di port " + PORT);
 
@@ -60,7 +47,7 @@ public class MultiServerPelelangan {
         }
     }
 
-    private void stopAuction(String auctionId) {
+    public void stopAuction(String auctionId) {
         BarangLelang barang = currentAuctions.get(auctionId);
         if (barang == null) return;
 

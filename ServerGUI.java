@@ -3,17 +3,21 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ServerGUI extends JFrame {
 
     private JTextField fieldNamaBarang;
     private JTextField fieldHargaAwal;
     private JTextField fieldDurasi;
-    private JButton btnStartServer;
+    private JButton btnTambahBarang;
     private JTextArea areaLog;
 
-    public ServerGUI() {
+    private MultiServerPelelangan server;
+    private List<BarangInput> barangList = new ArrayList<>();
 
+    public ServerGUI() {
         setTitle("Auction Server");
         setSize(520, 560);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -65,8 +69,8 @@ public class ServerGUI extends JFrame {
 
         gc.gridy = 6;
         gc.insets = new Insets(18, 10, 10, 10);
-        btnStartServer = createModernButton("Mulai Server");
-        card.add(btnStartServer, gc);
+        btnTambahBarang = createModernButton("Tambah Barang / Selesai");
+        card.add(btnTambahBarang, gc);
 
         JPanel leftPanel = new JPanel(new BorderLayout());
         leftPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
@@ -96,7 +100,10 @@ public class ServerGUI extends JFrame {
 
         add(split, BorderLayout.CENTER);
 
-        btnStartServer.addActionListener((ActionEvent e) -> startServer());
+        btnTambahBarang.addActionListener((ActionEvent e) -> tambahBarang());
+
+        // Inisialisasi server instance (tetap belum jalan)
+        server = new MultiServerPelelangan();
     }
 
     private JLabel makeLabel(String text) {
@@ -118,42 +125,65 @@ public class ServerGUI extends JFrame {
             public void mouseEntered(MouseEvent e) { btn.setBackground(new Color(52, 113, 210)); }
             public void mouseExited(MouseEvent e) { btn.setBackground(new Color(66, 133, 244)); }
         });
-
         return btn;
     }
 
-    private void startServer() {
-        String namaBarang = fieldNamaBarang.getText().trim();
+    private void tambahBarang() {
+        String nama = fieldNamaBarang.getText().trim();
         String hargaStr = fieldHargaAwal.getText().trim();
         String durasiStr = fieldDurasi.getText().trim();
 
-        if (namaBarang.isEmpty() || hargaStr.isEmpty() || durasiStr.isEmpty()) {
+        if (nama.isEmpty() || hargaStr.isEmpty() || durasiStr.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Semua field harus diisi!", "Input Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        int hargaAwal, durasi;
+        int harga, durasi;
         try {
-            hargaAwal = Integer.parseInt(hargaStr);
+            harga = Integer.parseInt(hargaStr);
             durasi = Integer.parseInt(durasiStr);
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Harga awal dan durasi harus angka!", "Format Salah", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Harga dan durasi harus angka!", "Format Salah", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        btnStartServer.setEnabled(false);
-        areaLog.append("=== SERVER DIMULAI ===\n");
-        areaLog.append("Barang: " + namaBarang + "\n");
-        areaLog.append("Harga Awal: Rp " + hargaAwal + "\n");
-        areaLog.append("Durasi: " + durasi + " detik\n\n");
+        barangList.add(new BarangInput(nama, harga, durasi));
+        areaLog.append("Barang ditambahkan: " + nama + " | Harga: " + harga + " | Durasi: " + durasi + " detik\n");
 
-        new Thread(() -> {
-            try {
-                MultiServerPelelangan.startFromGUI(namaBarang, hargaAwal, durasi, areaLog);
-            } catch (Exception ex) {
-                SwingUtilities.invokeLater(() -> areaLog.append("ERROR: " + ex.getMessage() + "\n"));
+        fieldNamaBarang.setText("");
+        fieldHargaAwal.setText("");
+        fieldDurasi.setText("");
+
+        int pilihan = JOptionPane.showConfirmDialog(this, "Tambah barang lelang lagi?", "Konfirmasi", JOptionPane.YES_NO_OPTION);
+        if (pilihan == JOptionPane.NO_OPTION) {
+            // Jalankan semua barang sekaligus
+            for (BarangInput b : barangList) {
+                server.addAuctionFromGUI(b.nama, b.hargaAwal, b.durasi, areaLog);
             }
-        }).start();
+            areaLog.append("\n=== Semua barang sudah dimasukkan. Server berjalan... ===\n");
+            btnTambahBarang.setEnabled(false);
+
+            // Mulai thread server
+            new Thread(() -> {
+                try {
+                    server.startServer();
+                } catch (Exception ex) {
+                    SwingUtilities.invokeLater(() -> areaLog.append("ERROR Server: " + ex.getMessage() + "\n"));
+                }
+            }).start();
+        }
+    }
+
+    private static class BarangInput {
+        String nama;
+        int hargaAwal;
+        int durasi;
+
+        BarangInput(String nama, int hargaAwal, int durasi) {
+            this.nama = nama;
+            this.hargaAwal = hargaAwal;
+            this.durasi = durasi;
+        }
     }
 
     public static void main(String[] args) {
