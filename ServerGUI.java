@@ -13,78 +13,95 @@ public class ServerGUI extends JFrame {
     private JTextArea areaLog;
 
     public ServerGUI() {
-        setTitle("Server Pelelangan");
-        setSize(520, 550);
+
+        // ====== FRAME ======
+        setTitle("Auction Server");
+        setSize(520, 560);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-
-        // Modern background
         getContentPane().setBackground(new Color(245, 247, 250));
         setLayout(new BorderLayout());
 
-        // Panel utama (card)
-        RoundedPanel card = new RoundedPanel(20);
-        card.setBackground(Color.WHITE);
-        card.setLayout(new GridLayout(4, 2, 12, 12));
-        card.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
-        JLabel title = new JLabel("SERVER PELELANGAN", SwingConstants.CENTER);
-        title.setFont(new Font("Roboto", Font.BOLD, 20));
-        title.setBorder(BorderFactory.createEmptyBorder(15, 15, 10, 15));
-
+        // ====== TITLE ======
+        JLabel title = new JLabel("AUCTION SERVER", SwingConstants.CENTER);
+        title.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        title.setBorder(BorderFactory.createEmptyBorder(20, 10, 15, 10));
         add(title, BorderLayout.NORTH);
 
-        // FONT MODERN
-        Font font = new Font("Roboto", Font.PLAIN, 14);
+        // ====== CARD PANEL ======
+        RoundedPanel card = new RoundedPanel(22);
+        card.setBackground(Color.WHITE);
+        card.setLayout(new GridBagLayout());
+        card.setBorder(BorderFactory.createEmptyBorder(25, 25, 25, 25));
 
-        JLabel labelNama = new JLabel("Nama Barang:");
-        labelNama.setFont(font);
-        fieldNamaBarang = new JTextField();
+        GridBagConstraints gc = new GridBagConstraints();
+        gc.insets = new Insets(10, 10, 10, 10);
+        gc.fill = GridBagConstraints.HORIZONTAL;
+        gc.weightx = 1;
+
+        Font font = new Font("Segoe UI", Font.PLAIN, 14);
+
+        // Label + TextField (Modern)
+        gc.gridx = 0;
+        gc.gridy = 0;
+        card.add(makeLabel("Nama Barang:"), gc);
+
+        gc.gridy = 1;
+        fieldNamaBarang = new RoundedTextField(20);
         fieldNamaBarang.setFont(font);
+        card.add(fieldNamaBarang, gc);
 
-        JLabel labelHarga = new JLabel("Harga Awal (Rp):");
-        labelHarga.setFont(font);
-        fieldHargaAwal = new JTextField();
+        gc.gridy = 2;
+        card.add(makeLabel("Harga Awal (Rp):"), gc);
+
+        gc.gridy = 3;
+        fieldHargaAwal = new RoundedTextField(20);
         fieldHargaAwal.setFont(font);
+        card.add(fieldHargaAwal, gc);
 
-        JLabel labelDurasi = new JLabel("Durasi Lelang (detik):");
-        labelDurasi.setFont(font);
-        fieldDurasi = new JTextField();
+        gc.gridy = 4;
+        card.add(makeLabel("Durasi Lelang (detik):"), gc);
+
+        gc.gridy = 5;
+        fieldDurasi = new RoundedTextField(20);
         fieldDurasi.setFont(font);
+        card.add(fieldDurasi, gc);
 
-        // Tambahkan ke card panel
-        card.add(labelNama);
-        card.add(fieldNamaBarang);
-
-        card.add(labelHarga);
-        card.add(fieldHargaAwal);
-
-        card.add(labelDurasi);
-        card.add(fieldDurasi);
-
-        // Modern button
+        // ====== BUTTON ======
+        gc.gridy = 6;
+        gc.insets = new Insets(18, 10, 10, 10);
         btnStartServer = createModernButton("Mulai Server");
-        card.add(new JLabel()); // filler
-        card.add(btnStartServer);
+        card.add(btnStartServer, gc);
 
         add(card, BorderLayout.CENTER);
 
-        // Area log modern
+        // ====== LOG AREA ======
         areaLog = new JTextArea();
-        areaLog.setFont(new Font("Consolas", Font.PLAIN, 13));
         areaLog.setEditable(false);
-        areaLog.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        areaLog.setFont(new Font("Consolas", Font.PLAIN, 13));
+        areaLog.setBackground(Color.WHITE);
+        areaLog.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createEmptyBorder(10, 15, 10, 15),
+                BorderFactory.createLineBorder(new Color(225, 225, 225), 1)
+        ));
 
         JScrollPane scroll = new JScrollPane(areaLog);
         scroll.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
         add(scroll, BorderLayout.SOUTH);
 
-        // Event button
+        // ====== EVENT ======
         btnStartServer.addActionListener((ActionEvent e) -> startServer());
     }
 
-    // ========== BUTTON STYLE ==========
+    // ======================== UI COMPONENT MAKER ========================
+
+    private JLabel makeLabel(String text) {
+        JLabel lbl = new JLabel(text);
+        lbl.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        return lbl;
+    }
+
     private JButton createModernButton(String text) {
         JButton btn = new JButton(text);
         btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -92,8 +109,9 @@ public class ServerGUI extends JFrame {
         btn.setBackground(new Color(66, 133, 244));
         btn.setFocusPainted(false);
         btn.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        // Hover effect
+        // Hover Effect
         btn.addMouseListener(new MouseAdapter() {
             public void mouseEntered(MouseEvent e) {
                 btn.setBackground(new Color(52, 113, 210));
@@ -102,32 +120,12 @@ public class ServerGUI extends JFrame {
                 btn.setBackground(new Color(66, 133, 244));
             }
         });
+
         return btn;
     }
 
-    // ========== PANEL ROUNDED ==========
-    class RoundedPanel extends JPanel {
-        private int radius;
+    // ======================== SERVER LOGIC (TIDAK DIUBAH) ========================
 
-        public RoundedPanel(int radius) {
-            this.radius = radius;
-            setOpaque(false);
-        }
-
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            Dimension arcs = new Dimension(radius, radius);
-            int width = getWidth();
-            int height = getHeight();
-            Graphics2D g2 = (Graphics2D) g;
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-            g2.setColor(getBackground());
-            g2.fillRoundRect(0, 0, width - 1, height - 1, arcs.width, arcs.height);
-        }
-    }
-
-    // ========== LOGIC ==========
     private void startServer() {
         String namaBarang = fieldNamaBarang.getText().trim();
         String hargaStr = fieldHargaAwal.getText().trim();
@@ -169,7 +167,15 @@ public class ServerGUI extends JFrame {
         }).start();
     }
 
+    // ======================== MAIN ========================
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new ServerGUI().setVisible(true));
-    }
+    SwingUtilities.invokeLater(() -> {
+        ServerGUI gui = new ServerGUI();
+        gui.setVisible(true);
+
+        // MAXIMIZE WINDOW
+        gui.setExtendedState(JFrame.MAXIMIZED_BOTH);
+    });
+}
+
 }

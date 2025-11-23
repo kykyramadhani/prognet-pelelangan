@@ -9,7 +9,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
 import javax.swing.*;
 import java.awt.*;
 
@@ -65,7 +64,6 @@ public class MultiServerPelelangan {
     private static ScheduledExecutorService scheduler;
 
     private static List<PrintWriter> allClientWriters = new CopyOnWriteArrayList<>();
-
 
     // ======================================================
     // ===============       GUI SERVER       ===============
@@ -140,7 +138,6 @@ public class MultiServerPelelangan {
         });
 
     }
-
 
 
     // ======================================================
