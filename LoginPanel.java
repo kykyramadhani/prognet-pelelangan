@@ -40,11 +40,8 @@ public class LoginPanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = 4; add(new JLabel("Password:"), gbc);
         // Untuk JPasswordField, kita bisa extend RoundedTextField, atau membuat kustomisasi sendiri
         // Untuk kesederhanaan, kita gunakan JPasswordField biasa dengan setting border
-        passwordField = new JPasswordField("", 20);
+        passwordField = new RoundedPasswordField(20);
         passwordField.setBackground(INPUT_BG);
-        passwordField.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.LIGHT_GRAY),
-            BorderFactory.createEmptyBorder(5, 5, 5, 5)));
         gbc.gridx = 1; add(passwordField, gbc);
         
         // --- Tombol Connect (Tombol Gelap + Sudut Membulat) ---
