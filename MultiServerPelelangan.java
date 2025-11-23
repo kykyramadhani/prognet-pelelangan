@@ -3,211 +3,131 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import javax.swing.*;
-import java.awt.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
+public class MultiServerPelelangan {
+    private ServerSocket serverSocket;
+    private static final int PORT = 1234;
+    
+    // Instance Fields (Non-Static)
+    private final Map<String, BarangLelang> currentAuctions = new HashMap<>(); 
+    private final Map<String, Boolean> auctionActiveStatus = new HashMap<>(); 
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(10);
+    private final List<PrintWriter> allClientWriters = new CopyOnWriteArrayList<>();
+    private final Map<PrintWriter, String> clientAuctionMap = new HashMap<>();
+    
+    // Penghitung ID barang otomatis
+    private final AtomicInteger auctionIdCounter = new AtomicInteger(1); 
 
-class BarangLelang {
-    String namaBarang = "";
-    int hargaTawaranTertinggi = 0;
-    String penawarTertinggi = "";
-
-    BarangLelang(String nama, int hargaAwal) {
-        this.namaBarang = nama;
-        this.hargaTawaranTertinggi = hargaAwal;
-        this.penawarTertinggi = "Belum ada (Harga Awal)";
-        System.out.println("Barang '" + nama + "' dibuka dengan harga awal Rp " + hargaAwal);
+    public static void main(String[] args) throws IOException {
+        MultiServerPelelangan server = new MultiServerPelelangan(); // Instance server
+        server.setupAuctions(); // Panggil setup untuk input pengguna
+        server.startServer();
     }
-
-    public synchronized boolean ajukanTawaran(String namaPenawar, int jumlahTawaran) {
-        if (jumlahTawaran > this.hargaTawaranTertinggi) {
-            this.hargaTawaranTertinggi = jumlahTawaran;
-            this.penawarTertinggi = namaPenawar;
+    
+    // PERUBAHAN UTAMA: Menerima input dari konsol
+    private void setupAuctions() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("--- PENDAFTARAN SESI LELANG ---");
+        
+        while (true) {
+            System.out.print("\nApakah Anda ingin mendaftarkan barang lelang baru? (ya/tidak): ");
+            String choice = scanner.nextLine().trim().toLowerCase();
             
-            System.out.println("\n---------------------------------");
-            System.out.println("[UPDATE HARGA DI SERVER]");
-            System.out.println("Tawaran diterima dari: " + namaPenawar);
-            System.out.println("Harga tertinggi baru: Rp " + this.hargaTawaranTertinggi);
-            System.out.println("---------------------------------");
+            if (!choice.equals("ya")) {
+                break;
+            }
+            
+            // 1. Ambil Input
+            System.out.print("Masukkan Nama Barang: ");
+            String namaBarang = scanner.nextLine();
+            
+            System.out.print("Masukkan Harga Awal (Rp): ");
+            int hargaAwal;
+            try {
+                hargaAwal = Integer.parseInt(scanner.nextLine());
+            } catch (NumberFormatException e) {
+                System.out.println("Input harga tidak valid. Batalkan pendaftaran barang ini.");
+                continue;
+            }
 
-            String updateMessage = "UPDATE:" + this.hargaTawaranTertinggi + ":" + this.penawarTertinggi;
-            MultiServerPelelangan.broadcastMessage(updateMessage);
-            return true;
-        } else {
-            return false;
+            System.out.print("Masukkan Durasi Lelang (dalam detik): ");
+            int durasiLelang;
+            try {
+                durasiLelang = Integer.parseInt(scanner.nextLine());
+                if (durasiLelang <= 0) {
+                     System.out.println("Durasi harus lebih dari 0. Batalkan pendaftaran barang ini.");
+                     continue;
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Input durasi tidak valid. Batalkan pendaftaran barang ini.");
+                continue;
+            }
+
+            System.out.print("Masukkan URL Gambar Barang: ");
+            String urlGambar = scanner.nextLine();
+            
+            // 2. Buat Lelang
+            String auctionId = "ID" + auctionIdCounter.getAndIncrement();
+            
+            BarangLelang newBarang = new BarangLelang(auctionId, namaBarang, hargaAwal, urlGambar, this);
+            currentAuctions.put(auctionId, newBarang);
+            auctionActiveStatus.put(auctionId, true);
+            
+            // 3. Jadwalkan Penutupan Lelang
+            scheduler.schedule(() -> stopAuction(auctionId), durasiLelang, TimeUnit.SECONDS);
+            
+            System.out.println("Barang '" + namaBarang + "' berhasil didaftarkan dengan ID: " + auctionId + " selama " + durasiLelang + " detik.");
+        }
+        
+        System.out.println("\n--- PENDAFTARAN SELESAI ---");
+        System.out.println("Total " + currentAuctions.size() + " lelang dijadwalkan.");
+        if (currentAuctions.isEmpty()) {
+            System.out.println("Tidak ada lelang aktif. Server akan berjalan hanya untuk koneksi.");
         }
     }
     
-    public synchronized String getPemenangInfo() {
-        return "Pemenang: " + penawarTertinggi + " dengan tawaran Rp " + hargaTawaranTertinggi;
-    }
-
-    public synchronized String getStatusInfo() {
-        return "STATUS:" + this.namaBarang + ":" + this.hargaTawaranTertinggi + ":" + this.penawarTertinggi;
-    }
-}
-
-
-
-public class MultiServerPelelangan {
-
-    private static ServerSocket serverSocket;
-    private static final int PORT = 1234;
-    public static BarangLelang barang;
-    private static volatile boolean isAuctionActive = true;
-    private static ScheduledExecutorService scheduler;
-
-    private static List<PrintWriter> allClientWriters = new CopyOnWriteArrayList<>();
-
-    // ======================================================
-    // ===============       GUI SERVER       ===============
-    // ======================================================
-
-    public static void main(String[] args) {
-
-        SwingUtilities.invokeLater(() -> {
-
-            JFrame frame = new JFrame("Server Pelelangan");
-            frame.setSize(450, 400);
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setLayout(new BorderLayout());
-
-            // Input Panel
-            JPanel inputPanel = new JPanel();
-            inputPanel.setLayout(new GridLayout(4, 2));
-
-            JTextField namaBarangField = new JTextField();
-            JTextField hargaAwalField = new JTextField();
-            JTextField durasiField = new JTextField();
-
-            inputPanel.add(new JLabel("Nama Barang:"));
-            inputPanel.add(namaBarangField);
-
-            inputPanel.add(new JLabel("Harga Awal (Rp):"));
-            inputPanel.add(hargaAwalField);
-
-            inputPanel.add(new JLabel("Durasi (detik):"));
-            inputPanel.add(durasiField);
-
-            JButton startButton = new JButton("Mulai Server");
-
-            inputPanel.add(startButton);
-
-            // Log Area
-            JTextArea logArea = new JTextArea();
-            logArea.setEditable(false);
-
-            frame.add(inputPanel, BorderLayout.NORTH);
-            frame.add(new JScrollPane(logArea), BorderLayout.CENTER);
-
-            frame.setVisible(true);
-
-
-            // Tombol Start ditekan
-            startButton.addActionListener(e -> {
-
-                try {
-                    String namaBarang = namaBarangField.getText();
-                    int hargaAwal = Integer.parseInt(hargaAwalField.getText().trim());
-                    int durasi = Integer.parseInt(durasiField.getText().trim());
-
-                    startButton.setEnabled(false);
-
-                    new Thread(() -> {
-                        try {
-                            startFromGUI(namaBarang, hargaAwal, durasi, logArea);
-                        } catch (Exception ex) {
-                            SwingUtilities.invokeLater(() ->
-                                logArea.append("Error: " + ex.getMessage() + "\n")
-                            );
-                        }
-                    }).start();
-
-                } catch (Exception ex) {
-                    logArea.append("Input tidak valid!\n");
-                }
-
-            });
-
-        });
-
-    }
-
-
-    // ======================================================
-    // ===============  SERVER LOGIC FOR GUI ===============
-    // ======================================================
-    public static void startFromGUI(String namaBarang, int hargaAwal, int durasi, JTextArea logArea) throws IOException {
-
-        barang = new BarangLelang(namaBarang, hargaAwal);
-
-        isAuctionActive = true;
-
-        scheduler = Executors.newScheduledThreadPool(1);
-        scheduler.schedule(() -> stopAuctionGUI(logArea), durasi, TimeUnit.SECONDS);
-
-        serverSocket = new ServerSocket(PORT);
-
-        logArea.append("Server berjalan di port " + PORT + "\n");
-        logArea.append("Lelang dimulai...\n\n");
-
-        while (isAuctionActive) {
-            try {
-                Socket client = serverSocket.accept();
-
-                SwingUtilities.invokeLater(() ->
-                    logArea.append("Penawar terhubung: " + client.getInetAddress().getHostAddress() + "\n")
-                );
-
-                PenawarClientHandler handler = new PenawarClientHandler(client, barang);
-                handler.start();
-
-            } catch (SocketException e) {
-                break;
-            }
-        }
-
-        SwingUtilities.invokeLater(() -> logArea.append("Server berhenti.\n"));
-    }
-
-
-
-    private static void stopAuctionGUI(JTextArea logArea) {
-        isAuctionActive = false;
-
-        SwingUtilities.invokeLater(() -> {
-            logArea.append("\n--- WAKTU LELANG HABIS ---\n");
-            logArea.append(barang.getPemenangInfo() + "\n");
-        });
-
-        broadcastMessage("CLOSED:" + barang.getPemenangInfo());
-
+    private void startServer() throws IOException {
         try {
-            if (serverSocket != null && !serverSocket.isClosed()) {
-                serverSocket.close();
-            }
-        } catch (IOException ignored) {}
+            serverSocket = new ServerSocket(PORT);
+            System.out.println("\nServer Pelelangan Aktif di Port " + PORT + ". Menunggu koneksi...");
 
-        scheduler.shutdown();
+            while (true) {
+                try {
+                    Socket client = serverSocket.accept();
+                    System.out.println("\nPenawar baru terhubung: " + client.getInetAddress().getHostName());
+                    
+                    PenawarClientHandler handler = new PenawarClientHandler(client, this);
+                    handler.start();
+
+                } catch (SocketException e) {
+                    if (serverSocket != null && serverSocket.isClosed()) {
+                        System.out.println("Server socket ditutup, server berhenti.");
+                        break;
+                    }
+                    e.printStackTrace();
+                }
+            }
+        } catch (IOException ioEx) {
+            System.out.println("\nTidak bisa men-set port!");
+            System.exit(1);
+        } finally {
+            shutdownServer();
+        }
     }
 
-    // =================== ORIGINAL METHODS ===================
-
-    private static void stopAuction() {
-        isAuctionActive = false;
-
-        System.out.println("\n--- WAKTU LELANG HABIS ---");
-        System.out.println(barang.getPemenangInfo());
-        System.out.println("---------------------------------");
-        
-        broadcastMessage("CLOSED:" + barang.getPemenangInfo());
-
+    private void shutdownServer() {
+        if (scheduler != null && !scheduler.isShutdown()) {
+            scheduler.shutdownNow();
+        }
         try {
             if (serverSocket != null && !serverSocket.isClosed()) {
                 serverSocket.close();
@@ -215,110 +135,80 @@ public class MultiServerPelelangan {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        
-        scheduler.shutdown();
+        System.out.println("Server pelelangan telah berhenti.");
     }
 
-    public static void broadcastMessage(String message) {
+    private void stopAuction(String auctionId) {
+        BarangLelang barang = currentAuctions.get(auctionId);
+        if (barang == null) return;
+
+        auctionActiveStatus.put(auctionId, false);
+        System.out.println("\n--- WAKTU LELANG (" + auctionId + ") HABIS ---");
+        System.out.println(barang.getPemenangInfo());
+        
+        broadcastMessageToAuction(auctionId, "CLOSED:" + barang.getPemenangInfo());
+        
+        currentAuctions.remove(auctionId);
+        System.out.println("Lelang ID " + auctionId + " telah dihapus dari daftar aktif.");
+
+        broadcastMessage(getAvailableAuctions());
+    }
+
+    // --- Metode Utilitas Server (Diakses oleh Handler) ---
+
+    public void broadcastMessage(String message) {
         for (PrintWriter writer : allClientWriters) {
             writer.println(message);
         }
     }
 
-    public static void addClientWriter(PrintWriter writer) {
-        allClientWriters.add(writer);
+    public void broadcastMessageToAuction(String auctionId, String message) {
+        for (Map.Entry<PrintWriter, String> entry : clientAuctionMap.entrySet()) {
+            if (entry.getValue().equals(auctionId)) {
+                entry.getKey().println(message);
+            }
+        }
     }
 
-    public static void removeClientWriter(PrintWriter writer) {
-        allClientWriters.remove(writer);
-    }
+    public void addClientWriter(PrintWriter writer) { allClientWriters.add(writer); }
+    public void removeClientWriter(PrintWriter writer) { allClientWriters.remove(writer); }
+    public void registerClientToAuction(PrintWriter writer, String auctionId) { clientAuctionMap.put(writer, auctionId); }
+    public void unregisterClientFromAuction(PrintWriter writer) { clientAuctionMap.remove(writer); }
 
-    public static boolean isAuctionActive() {
-        return isAuctionActive;
+    public BarangLelang getAuction(String auctionId) {
+        return currentAuctions.get(auctionId);
+    }
+    
+    public boolean isAuctionActive(String auctionId) {
+        return auctionActiveStatus.getOrDefault(auctionId, false);
+    }
+    
+    public String getAvailableAuctions() {
+        // Format: AUCTIONS:ID1,NAMA1,HARGA1,URL1|ID2,NAMA2,HARGA2,URL2|...
+        StringBuilder sb = new StringBuilder("AUCTIONS:");
+        boolean first = true;
+        for (BarangLelang b : currentAuctions.values()) {
+            if (!first) {
+                sb.append("|");
+            }
+            sb.append(b.idLelang).append(",")
+              .append(b.namaBarang).append(",")
+              .append(b.hargaTawaranTertinggi).append(",")
+              .append(b.urlGambar);
+            first = false;
+        }
+        return sb.toString();
     }
 }
 
 
 
 
-// ======================================================
-// ===============     CLIENT HANDLER     ===============
-// ======================================================
 
-class PenawarClientHandler extends Thread {
 
-    private Socket client;
-    private Scanner input;
-    private PrintWriter output;
-    private BarangLelang barang;
-    private String namaPenawar;
 
-    public PenawarClientHandler(Socket socket, BarangLelang barang) {
-        this.client = socket;
-        this.barang = barang;
-        try {
-            this.input = new Scanner(client.getInputStream());
-            this.output = new PrintWriter(client.getOutputStream(), true);
-        } catch (IOException ioEx) {
-            ioEx.printStackTrace();
-        }
-    }
 
-    public void run() {
-        try {
-            if (input.hasNextLine()) {
-                String loginMessage = input.nextLine(); 
-                if (loginMessage.startsWith("LOGIN:")) {
-                    this.namaPenawar = loginMessage.split(":")[1];
-                    System.out.println(namaPenawar + " telah bergabung dalam lelang.");
-                } else {
-                    System.out.println("Klien tidak mengirim nama. Koneksi ditutup.");
-                    return; 
-                }
-            }
-            
-            MultiServerPelelangan.addClientWriter(this.output);
 
-            if (MultiServerPelelangan.isAuctionActive()) {
-                 this.output.println(barang.getStatusInfo());
-            } else {
-                 this.output.println("CLOSED:Lelang sudah berakhir.");
-                 return; 
-            }
 
-            while (MultiServerPelelangan.isAuctionActive() && input.hasNextLine()) {
-                String message = input.nextLine(); 
-                
-                try {
-                    int tawaran = Integer.parseInt(message);
-                    
-                    if (!barang.ajukanTawaran(this.namaPenawar, tawaran)) {
-                        System.out.println("Tawaran DITOLAK: " + this.namaPenawar + " menawar Rp " + tawaran + " (Harga saat ini Rp " + barang.hargaTawaranTertinggi + ")");
-                        this.output.println("REJECTED:Tawaran Anda terlalu rendah. Harga saat ini Rp " + barang.hargaTawaranTertinggi);
-                    } else {
-                        this.output.println("ACCEPTED:Tawaran Anda (Rp "+ tawaran +") diterima.");
-                    }
-                    
-                } catch (NumberFormatException e) {
-                    this.output.println("ERROR: Harap kirim angka saja untuk menawar.");
-                }
-            }
 
-        } catch (Exception e) {
-            System.out.println("Koneksi dengan " + (namaPenawar != null ? namaPenawar : "klien") + " terputus.");
-        } finally {
-            if (this.output != null) {
-                MultiServerPelelangan.removeClientWriter(this.output);
-            }
-            try {
-                if (client != null) {
-                    client.close();
-                }
-            } catch (IOException ioEx) {
-            }
-            if(namaPenawar != null) {
-                System.out.println(namaPenawar + " telah meninggalkan lelang.");
-            }
-        }
-    }
-}
+
