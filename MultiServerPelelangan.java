@@ -10,6 +10,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import javax.swing.*;
+import java.awt.*;
+
 
 class BarangLelang {
     String namaBarang = "";
@@ -54,6 +57,7 @@ class BarangLelang {
 
 
 public class MultiServerPelelangan {
+
     private static ServerSocket serverSocket;
     private static final int PORT = 1234;
     public static BarangLelang barang;
@@ -62,57 +66,145 @@ public class MultiServerPelelangan {
 
     private static List<PrintWriter> allClientWriters = new CopyOnWriteArrayList<>();
 
-    public static void main(String[] args) throws IOException {
-        Scanner inputAdmin = new Scanner(System.in);
 
-        System.out.print("Nama Barang yang akan dilelang: ");
-        String namaBarang = inputAdmin.nextLine();
-        System.out.print("Harga Awal Barang (Rp): ");
-        int hargaAwal = inputAdmin.nextInt();
-        System.out.print("Durasi lelang (dalam detik): ");
-        int durasiLelang = inputAdmin.nextInt();
+    // ======================================================
+    // ===============       GUI SERVER       ===============
+    // ======================================================
+
+    public static void main(String[] args) {
+
+        SwingUtilities.invokeLater(() -> {
+
+            JFrame frame = new JFrame("Server Pelelangan");
+            frame.setSize(450, 400);
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setLayout(new BorderLayout());
+
+            // Input Panel
+            JPanel inputPanel = new JPanel();
+            inputPanel.setLayout(new GridLayout(4, 2));
+
+            JTextField namaBarangField = new JTextField();
+            JTextField hargaAwalField = new JTextField();
+            JTextField durasiField = new JTextField();
+
+            inputPanel.add(new JLabel("Nama Barang:"));
+            inputPanel.add(namaBarangField);
+
+            inputPanel.add(new JLabel("Harga Awal (Rp):"));
+            inputPanel.add(hargaAwalField);
+
+            inputPanel.add(new JLabel("Durasi (detik):"));
+            inputPanel.add(durasiField);
+
+            JButton startButton = new JButton("Mulai Server");
+
+            inputPanel.add(startButton);
+
+            // Log Area
+            JTextArea logArea = new JTextArea();
+            logArea.setEditable(false);
+
+            frame.add(inputPanel, BorderLayout.NORTH);
+            frame.add(new JScrollPane(logArea), BorderLayout.CENTER);
+
+            frame.setVisible(true);
+
+
+            // Tombol Start ditekan
+            startButton.addActionListener(e -> {
+
+                try {
+                    String namaBarang = namaBarangField.getText();
+                    int hargaAwal = Integer.parseInt(hargaAwalField.getText().trim());
+                    int durasi = Integer.parseInt(durasiField.getText().trim());
+
+                    startButton.setEnabled(false);
+
+                    new Thread(() -> {
+                        try {
+                            startFromGUI(namaBarang, hargaAwal, durasi, logArea);
+                        } catch (Exception ex) {
+                            SwingUtilities.invokeLater(() ->
+                                logArea.append("Error: " + ex.getMessage() + "\n")
+                            );
+                        }
+                    }).start();
+
+                } catch (Exception ex) {
+                    logArea.append("Input tidak valid!\n");
+                }
+
+            });
+
+        });
+
+    }
+
+
+
+    // ======================================================
+    // ===============  SERVER LOGIC FOR GUI ===============
+    // ======================================================
+    public static void startFromGUI(String namaBarang, int hargaAwal, int durasi, JTextArea logArea) throws IOException {
 
         barang = new BarangLelang(namaBarang, hargaAwal);
 
+        isAuctionActive = true;
+
         scheduler = Executors.newScheduledThreadPool(1);
-        scheduler.schedule(() -> stopAuction(), durasiLelang, TimeUnit.SECONDS);
+        scheduler.schedule(() -> stopAuctionGUI(logArea), durasi, TimeUnit.SECONDS);
 
-        
-        try {
-            serverSocket = new ServerSocket(PORT);
-            System.out.println("\nServer Pelelangan Aktif di Port " + PORT + ". Lelang akan berlangsung " + durasiLelang + " detik.");
+        serverSocket = new ServerSocket(PORT);
 
-            while (isAuctionActive) {
-                try {
-                    Socket client = serverSocket.accept();
-                    System.out.println("\nPenawar baru terhubung: " + client.getInetAddress().getHostName());
-                    
-                    PenawarClientHandler handler = new PenawarClientHandler(client, barang);
-                    handler.start();
+        logArea.append("Server berjalan di port " + PORT + "\n");
+        logArea.append("Lelang dimulai...\n\n");
 
-                } catch (SocketException e) {
-                    if (!isAuctionActive) {
-                        System.out.println("Server socket ditutup, lelang berakhir.");
-                    } else {
-                        e.printStackTrace();
-                    }
-                }
+        while (isAuctionActive) {
+            try {
+                Socket client = serverSocket.accept();
+
+                SwingUtilities.invokeLater(() ->
+                    logArea.append("Penawar terhubung: " + client.getInetAddress().getHostAddress() + "\n")
+                );
+
+                PenawarClientHandler handler = new PenawarClientHandler(client, barang);
+                handler.start();
+
+            } catch (SocketException e) {
+                break;
             }
-        } catch (IOException ioEx) {
-            if (isAuctionActive) { 
-                System.out.println("\nTidak bisa men-set port!");
-                System.exit(1);
-            }
-        } finally {
-            if (scheduler != null && !scheduler.isShutdown()) {
-                scheduler.shutdown();
-            }
-            System.out.println("Server pelelangan telah berhenti.");
         }
+
+        SwingUtilities.invokeLater(() -> logArea.append("Server berhenti.\n"));
     }
+
+
+
+    private static void stopAuctionGUI(JTextArea logArea) {
+        isAuctionActive = false;
+
+        SwingUtilities.invokeLater(() -> {
+            logArea.append("\n--- WAKTU LELANG HABIS ---\n");
+            logArea.append(barang.getPemenangInfo() + "\n");
+        });
+
+        broadcastMessage("CLOSED:" + barang.getPemenangInfo());
+
+        try {
+            if (serverSocket != null && !serverSocket.isClosed()) {
+                serverSocket.close();
+            }
+        } catch (IOException ignored) {}
+
+        scheduler.shutdown();
+    }
+
+    // =================== ORIGINAL METHODS ===================
 
     private static void stopAuction() {
         isAuctionActive = false;
+
         System.out.println("\n--- WAKTU LELANG HABIS ---");
         System.out.println(barang.getPemenangInfo());
         System.out.println("---------------------------------");
@@ -150,7 +242,14 @@ public class MultiServerPelelangan {
 }
 
 
+
+
+// ======================================================
+// ===============     CLIENT HANDLER     ===============
+// ======================================================
+
 class PenawarClientHandler extends Thread {
+
     private Socket client;
     private Scanner input;
     private PrintWriter output;
