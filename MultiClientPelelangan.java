@@ -87,7 +87,7 @@ public class MultiClientPelelangan {
         Scanner userInput = new Scanner(System.in);
 
         try {
-            socket = new Socket("localhost", PORT);
+            socket = new Socket("10.10.162.233", PORT);
             
             Scanner networkInput = new Scanner(socket.getInputStream());
             PrintWriter networkOutput = new PrintWriter(socket.getOutputStream(), true);
