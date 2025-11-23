@@ -4,37 +4,33 @@ import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
 import javax.swing.*;
-import javax.swing.border.EmptyBorder; // Diperlukan untuk JButton kustom
+import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
-
-// Pastikan Anda telah membuat class RoundedPanel dan RoundedTextField
-// Jika Anda belum membuatnya, kode ini akan menghasilkan error kompilasi.
 
 public class AuctionPanel extends JPanel {
     private JPanel logPanel;
-    private RoundedTextField bidField; // Menggunakan RoundedTextField
+    private RoundedTextField bidField;
     private JButton bidButton;
     private JLabel itemLabel, holderLabel;
-    
-    // Elemen Interaktif & Warna
+
     private RoundedPanel priceDisplayPanel;
     private JLabel priceValueLabel;
-    private Timer highlightTimer; 
-    
-    // Palet Warna yang Lebih Gelap
-    private final Color DARK_ACCENT_COLOR = new Color(0, 105, 92); // Teal yang lebih gelap
-    private final Color DARK_SUCCESS_COLOR = new Color(30, 150, 80); // Hijau lebih gelap
-    private final Color REJECT_COLOR = new Color(231, 76, 60); 
-    private final Color ACCEPT_COLOR = new Color(39, 174, 96); 
-    private final Color UPDATE_COLOR = new Color(52, 152, 219); 
-    private final int RADIUS = 15; // Jari-jari umum untuk panel
-    private final int CARD_RADIUS = 10; // Jari-jari untuk card
+    private Timer highlightTimer;
+
+    private final Color DARK_ACCENT_COLOR = new Color(0, 105, 92);
+    private final Color DARK_SUCCESS_COLOR = new Color(30, 150, 80);
+    private final Color REJECT_COLOR = new Color(231, 76, 60);
+    private final Color ACCEPT_COLOR = new Color(39, 174, 96);
+    private final Color UPDATE_COLOR = new Color(52, 152, 219);
+    private final int RADIUS = 15;
+    private final int CARD_RADIUS = 10;
 
     private Socket socket;
     private PrintWriter networkOutput;
     private AuctionClientGUI parentFrame;
 
-    // Helper: Button kustom dengan rounded corner
+    private String selectedAuctionId = null;
+
     private JButton createRoundedButton(String text, Color bgColor) {
         JButton button = new JButton(text) {
             @Override
@@ -49,7 +45,7 @@ public class AuctionPanel extends JPanel {
             @Override
             protected void paintBorder(Graphics g) {}
         };
-        button.setForeground(Color.WHITE); 
+        button.setForeground(Color.WHITE);
         button.setFocusPainted(false);
         button.setContentAreaFilled(false);
         return button;
@@ -57,53 +53,47 @@ public class AuctionPanel extends JPanel {
 
     public AuctionPanel(AuctionClientGUI parent) {
         this.parentFrame = parent;
-        
-        // --- Pengaturan Tampilan Dasar ---
-        setBackground(new Color(240, 240, 240)); 
-        setLayout(new BorderLayout(15, 15)); 
+
+        setBackground(new Color(240, 240, 240));
+        setLayout(new BorderLayout(15, 15));
         setBorder(new EmptyBorder(15, 15, 15, 15));
 
-        // 1. Bagian Atas: Status Lelang (Header Panel)
         JPanel headerPanel = new JPanel(new GridLayout(1, 2, 15, 0));
         headerPanel.setOpaque(false);
 
-        // a. Detail Barang (RoundedPanel)
         RoundedPanel itemDetailsPanel = new RoundedPanel(new GridLayout(2, 1), RADIUS);
         itemDetailsPanel.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
         itemDetailsPanel.setBackground(Color.WHITE);
-        
+
         itemLabel = new JLabel("Barang: -");
         itemLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
         holderLabel = new JLabel("Penawar Tertinggi: -");
         itemDetailsPanel.add(itemLabel);
         itemDetailsPanel.add(holderLabel);
 
-        // b. Harga Saat Ini (RoundedPanel)
         priceDisplayPanel = new RoundedPanel(new BorderLayout(), RADIUS);
         priceDisplayPanel.setBackground(new Color(255, 255, 204));
         priceDisplayPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        
+
         priceValueLabel = new JLabel("Rp 0", SwingConstants.CENTER);
         priceValueLabel.setFont(new Font("SansSerif", Font.BOLD, 36));
         priceValueLabel.setForeground(new Color(192, 57, 43));
-        
+
         JLabel priceTitle = new JLabel("HARGA TERTINGGI SAAT INI", SwingConstants.CENTER);
         priceTitle.setFont(new Font("SansSerif", Font.PLAIN, 12));
-        
+
         priceDisplayPanel.add(priceTitle, BorderLayout.NORTH);
         priceDisplayPanel.add(priceValueLabel, BorderLayout.CENTER);
-        
+
         headerPanel.add(itemDetailsPanel);
         headerPanel.add(priceDisplayPanel);
         add(headerPanel, BorderLayout.NORTH);
 
-        // 2. Bagian Tengah: Log Aktivitas (menggunakan Panel Card)
         logPanel = new JPanel();
         logPanel.setLayout(new BoxLayout(logPanel, BoxLayout.Y_AXIS));
         logPanel.setBackground(new Color(240, 240, 240));
-        
+
         JScrollPane scrollPane = new JScrollPane(logPanel);
-        // Border Titled tidak bisa dibulatkan dengan mudah, jadi kita atur warna
         scrollPane.setBorder(BorderFactory.createTitledBorder(
             BorderFactory.createLineBorder(Color.LIGHT_GRAY),
             "Log Aktivitas Real-time",
@@ -112,29 +102,27 @@ public class AuctionPanel extends JPanel {
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         add(scrollPane, BorderLayout.CENTER);
 
-        // 3. Bagian Bawah: Input Tawaran
         JPanel inputPanel = new JPanel(new BorderLayout(10, 0));
         inputPanel.setBorder(new EmptyBorder(10, 0, 0, 0));
-        
+
         bidField = new RoundedTextField(15);
         bidField.setFont(new Font("SansSerif", Font.PLAIN, 14));
         bidField.setBackground(Color.WHITE);
-        
+
         bidButton = createRoundedButton("Kirim Tawaran!", DARK_SUCCESS_COLOR);
         bidButton.setEnabled(false);
         bidButton.addActionListener(e -> sendBid());
-        
+
         inputPanel.add(new JLabel("Masukkan Nilai Tawaran (Rp):"), BorderLayout.WEST);
         inputPanel.add(bidField, BorderLayout.CENTER);
         inputPanel.add(bidButton, BorderLayout.EAST);
         add(inputPanel, BorderLayout.SOUTH);
-        
+
         highlightTimer = new Timer(500, e -> resetPriceDisplayColor());
         highlightTimer.setRepeats(false);
     }
-    
-    // --- Method Log Card dengan Rounded Corner ---
 
+    // --- Log card method (sama seperti sebelumnya) ---
     public void addLogCard(String message, String type) {
         Color cardColor;
         String headerText;
@@ -168,14 +156,14 @@ public class AuctionPanel extends JPanel {
             BorderFactory.createEmptyBorder(5, 0, 5, 0),
             BorderFactory.createLineBorder(cardColor, 1, true)
         ));
-        
+
         JLabel header = new JLabel("  " + headerText);
         header.setFont(new Font("SansSerif", Font.BOLD, 12));
         header.setForeground(Color.WHITE);
         header.setBackground(cardColor);
         header.setOpaque(true);
         card.add(header, BorderLayout.NORTH);
-        
+
         JTextArea content = new JTextArea(message);
         content.setEditable(false);
         content.setLineWrap(true);
@@ -183,10 +171,10 @@ public class AuctionPanel extends JPanel {
         content.setFont(new Font("SansSerif", Font.PLAIN, 12));
         content.setBorder(new EmptyBorder(8, 8, 8, 8));
         card.add(content, BorderLayout.CENTER);
-        
+
         logPanel.add(card);
         logPanel.revalidate();
-        
+
         SwingUtilities.invokeLater(() -> {
             logPanel.getParent().getParent().validate();
             JScrollBar vertical = ((JScrollPane) logPanel.getParent().getParent()).getVerticalScrollBar();
@@ -194,15 +182,19 @@ public class AuctionPanel extends JPanel {
         });
     }
 
-    // --- Logika Koneksi dan Jaringan ---
-
+    // --- Networking / connection ---
     public void connectAndStartListener(String ip, int port, String username, String idToken) throws IOException {
         try {
             this.socket = new Socket(ip, port);
-            networkOutput = new PrintWriter(socket.getOutputStream(), true);
-            networkOutput.println("LOGIN:" + username + ":" + idToken);
+            this.networkOutput = new PrintWriter(socket.getOutputStream(), true);
+            // kirim LOGIN
+            this.networkOutput.println("LOGIN:" + username + ":" + idToken);
             addLogCard("Mencoba login sebagai: " + username, "INFO");
+
+            // start listener (SwingWorker)
             new ServerListenerTask(socket, this).execute();
+
+            // enable input (tawar) ketika sudah memilih auction & server mengizinkan
             bidButton.setEnabled(true);
         } catch (IOException e) {
             closeConnection();
@@ -210,15 +202,34 @@ public class AuctionPanel extends JPanel {
         }
     }
 
+    // mengirim SELECT ke server
+    public void sendSelectAuction(String auctionId) {
+        if (networkOutput != null) {
+            networkOutput.println("SELECT:" + auctionId);
+            addLogCard("Memilih lelang: " + auctionId, "INFO");
+            this.selectedAuctionId = auctionId;
+        } else {
+            addLogCard("Belum terhubung ke server.", "ERROR");
+        }
+    }
+
+    // dipanggil ketika user memilih item sehingga UI auction perlu menampilkan nama & id
+    public void setSelectedItem(String itemName, String auctionId) {
+        this.selectedAuctionId = auctionId;
+        itemLabel.setText("Barang: " + itemName + " (ID: " + auctionId + ")");
+        holderLabel.setText("Penawar Tertinggi: -");
+        priceValueLabel.setText("Rp 0");
+    }
+
     private void sendBid() {
         if (networkOutput == null || socket == null || socket.isClosed()) {
             JOptionPane.showMessageDialog(this, "Koneksi ke server terputus.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        
+
         String bidText = bidField.getText().trim();
         if (bidText.isEmpty()) return;
-        
+
         try {
             Long.parseLong(bidText);
             networkOutput.println(bidText);
@@ -231,15 +242,12 @@ public class AuctionPanel extends JPanel {
             closeConnection();
         }
     }
-    
-    // --- Method Update Status dan Visual ---
 
     public void updateStatus(String item, String price, String holder) {
         itemLabel.setText("Barang: " + item);
         holderLabel.setText("Penawar Tertinggi: " + holder);
-        
-        String currentPriceStr = priceValueLabel.getText().replace("Rp ", "").replaceAll(",", ""); 
 
+        String currentPriceStr = priceValueLabel.getText().replace("Rp ", "").replaceAll(",", "");
         if (!currentPriceStr.equals(price)) {
             priceValueLabel.setText("Rp " + price);
             highlightNewBid();
@@ -247,9 +255,9 @@ public class AuctionPanel extends JPanel {
     }
 
     private void highlightNewBid() {
-        priceDisplayPanel.setBackground(new Color(255, 99, 71)); 
+        priceDisplayPanel.setBackground(new Color(255, 99, 71));
         priceValueLabel.setForeground(Color.WHITE);
-        
+
         if (highlightTimer.isRunning()) {
             highlightTimer.restart();
         } else {
@@ -264,21 +272,19 @@ public class AuctionPanel extends JPanel {
 
     public void closeAuction(String message) {
         closeConnection();
-        parentFrame.closeAuction(message);
+        parentFrame.backToLoginView();
+        JOptionPane.showMessageDialog(parentFrame, message, "Lelang Ditutup", JOptionPane.INFORMATION_MESSAGE);
     }
-    
+
     public void closeConnection() {
         bidButton.setEnabled(false);
         addLogCard("Koneksi terputus/Lelang berakhir.", "INFO");
         try {
-            if (socket != null && !socket.isClosed()) {
-                socket.close();
-            }
+            if (socket != null && !socket.isClosed()) socket.close();
         } catch (IOException ioEx) {}
     }
 
     // --- Inner Class: ServerListenerTask (SwingWorker) ---
-
     private class ServerListenerTask extends SwingWorker<Void, String> {
         private Socket socket;
         private Scanner networkInput;
@@ -292,50 +298,57 @@ public class AuctionPanel extends JPanel {
 
         @Override
         protected Void doInBackground() throws Exception {
-             try {
+            try {
                 while (!isCancelled() && networkInput.hasNextLine()) {
                     String serverMessage = networkInput.nextLine();
-                    publish(serverMessage); 
+                    publish(serverMessage);
                 }
             } catch (Exception e) {
                 publish("DISCONNECT:Koneksi ke server terputus.");
             }
             return null;
         }
-        
+
         @Override
         protected void process(java.util.List<String> chunks) {
             for (String serverMessage : chunks) {
+                // Tangani pesan AUCTIONS, STATUS, UPDATE, dll.
+                if (serverMessage.startsWith("AUCTIONS:")) {
+                    // beritahu GUI untuk update SelectItemPanel
+                    parentFrame.updateSelectItemPanel(serverMessage);
+                    continue;
+                }
+
                 String[] parts = serverMessage.split(":", 2);
                 String command = parts[0];
                 String data = (parts.length > 1) ? parts[1] : "";
 
-                String[] statusData;
                 switch (command) {
-                    case "STATUS": 
-                        statusData = data.split(":");
+                    case "STATUS":
+                        String[] statusData = data.split(":");
+                        // STATUS:name:price:holder
                         panel.updateStatus(statusData[0], statusData[1], statusData[2]);
                         panel.addLogCard("Status lelang saat ini dimuat. Barang: " + statusData[0], "UPDATE");
                         break;
-                    
-                    case "UPDATE": 
-                        statusData = data.split(":");
-                        panel.updateStatus(itemLabel.getText(), statusData[0], statusData[1]);
-                        panel.addLogCard("Harga baru: Rp " + statusData[0] + " oleh " + statusData[1], "UPDATE");
+
+                    case "UPDATE":
+                        String[] updateData = data.split(":");
+                        panel.updateStatus(itemLabel.getText(), updateData[0], updateData[1]);
+                        panel.addLogCard("Harga baru: Rp " + updateData[0] + " oleh " + updateData[1], "UPDATE");
                         break;
-                        
-                    case "REJECTED": 
+
+                    case "REJECTED":
                         panel.addLogCard("Tawaran Anda ditolak. Alasan: " + data, "REJECTED");
                         break;
 
-                    case "ACCEPTED": 
+                    case "ACCEPTED":
                         panel.addLogCard("Tawaran Anda diterima! Harga saat ini: " + data, "ACCEPTED");
                         break;
 
                     case "CLOSED":
                         panel.closeAuction("Lelang telah ditutup. " + data);
                         break;
-                        
+
                     case "ERROR":
                         panel.addLogCard("Error dari server: " + data, "ERROR");
                         break;
@@ -343,9 +356,9 @@ public class AuctionPanel extends JPanel {
                     case "DISCONNECT":
                         panel.closeConnection();
                         JOptionPane.showMessageDialog(parentFrame, data, "Koneksi Terputus", JOptionPane.ERROR_MESSAGE);
-                        parentFrame.showView(AuctionClientGUI.LOGIN_VIEW);
+                        parentFrame.backToLoginView();
                         break;
-                        
+
                     default:
                         panel.addLogCard("Pesan Server: " + serverMessage, "INFO");
                 }

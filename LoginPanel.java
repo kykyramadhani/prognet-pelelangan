@@ -126,7 +126,7 @@ public class LoginPanel extends JPanel {
                 try {
                     String idToken = get();
                     if (idToken != null) {
-                        parentFrame.startAuction(ip, port, email, idToken); 
+                        parentFrame.startConnectionForSelection(ip, port, email, idToken); 
                     } else {
                         JOptionPane.showMessageDialog(parentFrame, 
                             "Login Gagal. Email atau Password salah.", 
