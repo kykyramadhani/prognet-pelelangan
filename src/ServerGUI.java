@@ -13,7 +13,7 @@ public class ServerGUI extends JFrame implements PropertyChangeListener {
     private JTextField fieldNamaBarang;
     private JTextField fieldHargaAwal;
     private JTextField fieldDurasi;
-    private JButton btnTambahBarang;
+    private RoundedButton btnTambahBarang;
     private JTextArea areaLog; // Log Aktivitas Server (non-chat)
     
     private AdminChatPanel chatPanel;
@@ -94,7 +94,9 @@ public class ServerGUI extends JFrame implements PropertyChangeListener {
         JScrollPane scrollLog = new JScrollPane(areaLog);
         scrollLog.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
-        RoundedPanel logCard = new RoundedPanel(16);
+        RoundedPanel logCard = new RoundedPanel(25);
+        logCard.setOpaque(false); // PENTING
+
         logCard.setBackground(Color.WHITE);
         logCard.setLayout(new BorderLayout());
         logCard.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
@@ -142,13 +144,13 @@ public class ServerGUI extends JFrame implements PropertyChangeListener {
         return lbl;
     }
 
-    private JButton createModernButton(String text) {
-        JButton btn = new JButton(text);
+    private RoundedButton createModernButton(String text) {
+        RoundedButton btn = new RoundedButton(text, 10, new Color(66, 133, 244), new Color(66, 133, 200));
         btn.setFont(new Font("SansSerif", Font.BOLD, 14));
         btn.setForeground(Color.WHITE);
         btn.setBackground(new Color(66, 133, 244));
         btn.setFocusPainted(false);
-        btn.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
+        btn.setBorderPainted(false);
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         btn.addMouseListener(new MouseAdapter() {
