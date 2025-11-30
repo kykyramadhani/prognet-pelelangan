@@ -111,10 +111,10 @@ public class LoginPanel extends JPanel {
         new SwingWorker<String, Void>() {
             @Override
             protected String doInBackground() throws Exception {
-                // SIMULASI FIREBASE AUTH
+               
                 Thread.sleep(1000); 
                 if (email.equals("user@lelang.com") && password.equals("password123")) {
-                    return "FIREBASE_ID_TOKEN_" + email.hashCode(); 
+                    return ": " + email; 
                 } else {
                     return null;
                 }
