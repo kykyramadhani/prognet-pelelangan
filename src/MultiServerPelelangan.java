@@ -6,7 +6,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.JTextArea;
-import javax.swing.SwingUtilities; // ⭐ Tambahkan import ini
+import javax.swing.SwingUtilities; 
 
 public class MultiServerPelelangan {
 
@@ -25,19 +25,15 @@ public class MultiServerPelelangan {
 
     private JTextArea guiLog; 
 
-
-    // ====================================================================
     // ADMIN CHAT & GUI FIRE HELPERS (PERBAIKAN AKSES PROTECTED)
-    // ====================================================================
-
-    // ⭐ PERBAIKAN: Helper untuk memicu update list klien (mengatasi Protected Access)
+    // fix: helper buat micu update list klien (biar gak error access)
     public void fireClientListUpdate() {
         if (guiLog != null) {
             SwingUtilities.invokeLater(() -> {
                 PropertyChangeEvent event = new PropertyChangeEvent(
                     this, "clientListUpdate", false, true
                 );
-                // Kirim event ke listener (yaitu ServerGUI)
+                // kirim event ke listener servergui
                 for (java.beans.PropertyChangeListener listener : guiLog.getPropertyChangeListeners()) {
                     listener.propertyChange(event);
                 }
@@ -45,14 +41,14 @@ public class MultiServerPelelangan {
         }
     }
 
-    // ⭐ PERBAIKAN: Helper untuk memicu pesan chat baru (mengatasi Protected Access)
+    // fix: helper buat trigger pesan chat baru (ngatasin protected access)
     public void fireNewClientChat(String senderName, String chatMessage) {
         if (guiLog != null) {
             SwingUtilities.invokeLater(() -> {
                 PropertyChangeEvent event = new PropertyChangeEvent(
                     this, "newClientChat", (Object)senderName, (Object)chatMessage
                 );
-                // Kirim event ke listener (yaitu ServerGUI)
+                // kirim event ke listener (servergui)
                 for (java.beans.PropertyChangeListener listener : guiLog.getPropertyChangeListeners()) {
                     listener.propertyChange(event);
                 }
@@ -60,7 +56,6 @@ public class MultiServerPelelangan {
         }
     }
     
-    // ... (Metode sendPrivateMessage dan broadcastChatMessage tetap sama)
     public boolean sendPrivateMessage(String recipientName, String message) {
         PenawarClientHandler handler = clientHandlers.get(recipientName);
         if (handler != null && handler.out != null) {
@@ -75,10 +70,8 @@ public class MultiServerPelelangan {
         broadcastMessage(fullMessage);
     }
     
-    // ====================================================================
-    // METODE INTI SERVER
-    // ====================================================================
     
+    // METODE INTI SERVER  
     public void addAuctionFromGUI(String namaBarang, int hargaAwal, int durasi, JTextArea areaLog) {
         this.guiLog = areaLog;
         String auctionId = "ID" + auctionIdCounter.getAndIncrement();
@@ -132,7 +125,6 @@ public class MultiServerPelelangan {
         }
     }
 
-    // ... (Metode Manajemen Klien tetap sama)
     public void addClientHandler(String name, PenawarClientHandler handler) { 
         clientHandlers.put(name, handler); 
     }
@@ -193,9 +185,8 @@ public class MultiServerPelelangan {
         }
     }
 
-    // ====================================================================
+    
     // CLIENT HANDLER
-    // ====================================================================
     public static class PenawarClientHandler extends Thread {
 
         private final Socket client;
@@ -229,10 +220,10 @@ public class MultiServerPelelangan {
                     line = line.trim();
                     if (line.isEmpty()) continue;
 
-                    // 1. LOGIN:username:idToken
+                    // 1. login:username:idtoken
                     if (line.startsWith("LOGIN:")) {
                         String[] parts = line.split(":", 3);
-                        // Kita ambil parts[1] (username/nama) sebagai nama klien. idToken (parts[2]) tidak digunakan.
+                        // kita ambil parts[1] buat nama klien. idtoken (parts[2]) gak dipake dulu.
                         this.clientName = (parts.length > 1) ? parts[1].trim() : "Penawar Tanpa Nama";
                         
                         server.addClientHandler(this.clientName, this); 
@@ -244,7 +235,7 @@ public class MultiServerPelelangan {
                         continue;
                     }
 
-                    // 2. SELECT:<id>
+                    // 2. select:<id>
                     if (line.startsWith("SELECT:") || line.startsWith("JOIN:")) {
                         String id = line.substring(line.indexOf(':') + 1).trim();
                         server.registerClientToAuction(out, id);
@@ -260,20 +251,20 @@ public class MultiServerPelelangan {
                         continue;
                     }
                     
-                    // 3. CHAT:Pesan obrolan Anda (ke Admin)
+                    // 3. chat:pesan obrolan (ke admin)
                     if (line.startsWith("CHAT:")) {
                         String chatMessage = line.substring(5).trim();
                         String senderName = this.clientName;
                         
                         appendToGUI("[CHAT dari " + senderName + "]: " + chatMessage + "\n");
                         
-                        // ⭐ Panggil Helper yang sudah dimodifikasi
+                        // panggil helper yg udh dimodif
                         server.fireNewClientChat(senderName, chatMessage);
                         continue;
                     }
 
 
-                    // 4. Tawaran (Numeric)
+                    // 4. tawaran (numeric)
                     if (line.matches("^\\d+$")) {
                         String auctionId = server.clientAuctionMap.get(out);
                         if (auctionId == null) {
@@ -300,13 +291,13 @@ public class MultiServerPelelangan {
                         continue;
                     }
 
-                    // 5. LIST command
+                    // 5. list command
                     if (line.equalsIgnoreCase("LIST")) {
                         out.println(server.getAvailableAuctions());
                         continue;
                     }
 
-                    // Unknown
+                    // kl gak dikenali
                     out.println("UNKNOWN_COMMAND");
                 }
 
@@ -314,7 +305,7 @@ public class MultiServerPelelangan {
                 appendToGUI("Koneksi terputus dengan " + (this.clientName != null ? this.clientName : "klien tak dikenal") + "\n");
             } finally {
                 server.removeClientHandler(out); 
-                // ⭐ Panggil Helper yang sudah dimodifikasi
+                // panggil helper yg udh diubah td
                 server.fireClientListUpdate();
                 try { client.close(); } catch (IOException ignored) {}
             }

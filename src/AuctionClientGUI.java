@@ -43,15 +43,15 @@ public class AuctionClientGUI extends JFrame {
     }
 
     public void startConnectionForSelection(String ip, int port, String username, String idToken) {
-    // Sekarang, idToken akan berisi username, ini tetap aman.
+    // skrg idtoken isinya username, aman kok
         try {
-            // auctionPanel.connectAndStartListener tetap menerima 4 parameter
+            // auctionpanel tetep nerima 4 param ya
             auctionPanel.connectAndStartListener(ip, port, username, idToken);
             showView(SELECT_VIEW);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this,
-                    "Gagal terhubung ke server: " + e.getMessage(),
-                    "Kesalahan Koneksi", JOptionPane.ERROR_MESSAGE);
+                    "gagal konek ke server: " + e.getMessage(),
+                    "kesalahan koneksi", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -92,7 +92,7 @@ public class AuctionClientGUI extends JFrame {
     public static void main(String[] args) {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception ex) { /* ignore */ }
+        } catch (Exception ex) { /* biarin aja */ }
         SwingUtilities.invokeLater(AuctionClientGUI::new);
     }
 }

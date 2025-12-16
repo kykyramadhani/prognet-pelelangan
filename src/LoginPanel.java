@@ -3,7 +3,7 @@ import java.awt.geom.RoundRectangle2D;
 import javax.swing.*;
 
 public class LoginPanel extends JPanel {
-    private JTextField ipField, portField, nameField; // 'emailField' diganti 'nameField'
+    private JTextField ipField, portField, nameField; // 'emailfield' diganti 'namefield' ya
     private JButton connectButton;
     private AuctionClientGUI parentFrame;
     
@@ -20,7 +20,7 @@ public class LoginPanel extends JPanel {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.anchor = GridBagConstraints.WEST;
 
-        // --- Input Server ---
+        // --- input server ---
         gbc.gridwidth = 1;
         gbc.gridy = 1; add(new JLabel("IP Server:"), gbc);
         gbc.gridx = 1; ipField = createStyledTextField("127.0.0.1"); add(ipField, gbc);
@@ -28,13 +28,13 @@ public class LoginPanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = 2; add(new JLabel("Port:"), gbc);
         gbc.gridx = 1; portField = createStyledTextField("1234"); add(portField, gbc);
         
-        // --- Input Nama (Pengganti Kredensial) ---
+        // --- input nama (ganti kredensial) ---
         gbc.gridx = 0; gbc.gridy = 3; add(new JLabel("Nama Panggilan:"), gbc);
         gbc.gridx = 1; nameField = createStyledTextField("Penawar_X"); add(nameField, gbc);
         
-        // *** JPasswordField dihapus ***
+        // *** jpasswordfield dihapus, gak pake ***
         
-        // --- Tombol Connect ---
+        // --- tombol konek ---
         gbc.gridx = 0; gbc.gridy = 5;
         gbc.gridwidth = 2;
         connectButton = createRoundedButton("Gabung Lelang", DARK_ACCENT_COLOR);
@@ -42,7 +42,7 @@ public class LoginPanel extends JPanel {
         add(connectButton, gbc);
     }
     
-    // Helper methods (tidak berubah)
+    // helper methods (gak berubah kok)
     private RoundedTextField createStyledTextField(String text) {
         RoundedTextField field = new RoundedTextField(text, 20);
         field.setBackground(INPUT_BG);
@@ -70,7 +70,7 @@ public class LoginPanel extends JPanel {
         return button;
     }
 
-    // --- Logika Koneksi Sederhana ---
+    // --- logika koneksi simpel ---
     private void attemptConnect() {
         connectButton.setEnabled(false);
         
@@ -94,13 +94,13 @@ public class LoginPanel extends JPanel {
             return;
         }
 
-        // Langsung coba koneksi tanpa simulasi otentikasi
+        // lgsg coba konek gak pake simulasi otentikasi
         new SwingWorker<String, Void>() {
             @Override
             protected String doInBackground() throws Exception {
-                // Beri waktu sebentar sebelum koneksi nyata (Opsional)
+                // kasih jeda dikit sbelum konek beneran (opsional sih)
                 Thread.sleep(100); 
-                return username; // Kembalikan username sebagai token sederhana
+                return username; // balikin username sbg token simpel
             }
 
             @Override
@@ -108,10 +108,10 @@ public class LoginPanel extends JPanel {
                 connectButton.setEnabled(true);
                 try {
                     String finalUsername = get();
-                    // ID Token sekarang sama dengan username
+                    // id token skrg disamain ama username
                     parentFrame.startConnectionForSelection(ip, port, finalUsername, finalUsername); 
                 } catch (Exception ex) {
-                    // Hanya menangani error dari SwingWorker (biasanya Thread Exception)
+                    // handle error dari swingworker aja
                 }
             }
         }.execute();

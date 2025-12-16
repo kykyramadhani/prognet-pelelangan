@@ -1,11 +1,11 @@
-import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 
 public class AdminChatPanel extends JPanel {
     private final MultiServerPelelangan server;
@@ -77,7 +77,7 @@ public class AdminChatPanel extends JPanel {
 
         chatInput.addActionListener(e -> sendPrivateOrBroadcastChat(false));
 
-        // Tombol hanya mengambil ruang secukupnya
+        // tombol cm ambil space dikit aja
         JPanel buttonWrapper = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         buttonWrapper.add(btnKirimPesan);
         buttonWrapper.add(btnBroadcast);
@@ -102,7 +102,7 @@ public class AdminChatPanel extends JPanel {
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
 
-        // Hover Effect
+        // efek pas mouse lewat (hover)
         btn.addMouseListener(new MouseAdapter() {
             @Override public void mouseEntered(MouseEvent e) {
                 btn.setBackground(bgColor.darker());
@@ -122,14 +122,14 @@ public class AdminChatPanel extends JPanel {
         chatHistory.setText("");
 
         if (selectedClient.equals(BROADCAST_KEY)) {
-            chatHistory.append("=== Mode Broadcast: Pesan terkirim ke semua klien ===\n\n");
+            chatHistory.append("=== mode broadcast: pesan dikirim ke semua user ===\n\n");
 
             btnBroadcast.setVisible(true);
             btnBroadcast.setEnabled(true);
             btnKirimPesan.setVisible(false);
 
         } else {
-            chatHistory.append("=== Chat Pribadi dengan: " + selectedClient + " ===\n\n");
+            chatHistory.append("=== chat japri ama: " + selectedClient + " ===\n\n");
             chatHistory.append(privateChatHistoryMap.getOrDefault(selectedClient, ""));
 
             btnBroadcast.setVisible(false);
@@ -152,7 +152,7 @@ public class AdminChatPanel extends JPanel {
                 appendChatHistory(selectedClient, "[Admin]", msg);
             } else {
                 JOptionPane.showMessageDialog(this,
-                        "Klien tidak ditemukan atau sudah disconnect.",
+                        "Klien gak ketemu atau udh disconnect.",
                         "Error", JOptionPane.ERROR_MESSAGE);
             }
         }

@@ -1,5 +1,3 @@
-// File: BarangLelang.java
-
 class BarangLelang {
     String idLelang; 
     String namaBarang = ""; 

@@ -17,11 +17,11 @@ public class AuctionPanel extends JPanel {
     private JLabel priceValueLabel;
     private Timer highlightTimer;
 
-    // --- KOMPONEN CHAT ---
+    // --- komponen buat chatting ---
     private JTextArea chatArea;
     private RoundedTextField chatInputField;
     private JButton chatButton;
-    // --- AKHIR KOMPONEN CHAT ---
+    // --- akhir komponen chat ---
 
     private final Color DARK_ACCENT_COLOR = new Color(0, 105, 92);
     private final Color DARK_SUCCESS_COLOR = new Color(30, 150, 80);
@@ -90,7 +90,7 @@ public class AuctionPanel extends JPanel {
         headerPanel.add(priceDisplayPanel);
         add(headerPanel, BorderLayout.NORTH);
 
-        // --- Log Lelang (Sisi Kiri) ---
+        // --- log lelang (kiri) ---
         logPanel = new JPanel();
         logPanel.setLayout(new BoxLayout(logPanel, BoxLayout.Y_AXIS));
         logPanel.setBackground(new Color(240, 240, 240));
@@ -103,7 +103,7 @@ public class AuctionPanel extends JPanel {
                 new Font("SansSerif", Font.PLAIN, 12), DARK_ACCENT_COLOR));
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
-        // --- Split Panel untuk Log Lelang dan Chat ---
+        // --- panel dibagi dua buat log ama chat ---
         JSplitPane centerSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, scrollPane, createChatPanel());
         centerSplit.setResizeWeight(0.7); 
         centerSplit.setContinuousLayout(true);
@@ -111,7 +111,7 @@ public class AuctionPanel extends JPanel {
 
         add(centerSplit, BorderLayout.CENTER);
 
-        // --- Panel Input (Tawaran & Chat) ---
+        // --- panel input (tawaran & chat) ---
         JPanel inputPanel = new JPanel(new BorderLayout(10, 0));
         inputPanel.setBorder(new EmptyBorder(10, 0, 0, 0));
         bidField = new RoundedTextField(15);
@@ -127,7 +127,7 @@ public class AuctionPanel extends JPanel {
         inputPanel.add(bidField, BorderLayout.CENTER);
         inputPanel.add(bidButton, BorderLayout.EAST);
         
-        // --- Panel Input Bawah (Tawaran dan Chat) ---
+        // --- panel input bawah (gabung tawaran ama chat) ---
         JPanel bottomPanel = new JPanel(new GridLayout(2, 1, 0, 5)); 
         bottomPanel.setBorder(new EmptyBorder(10, 0, 0, 0));
         bottomPanel.add(inputPanel);
@@ -193,12 +193,12 @@ public class AuctionPanel extends JPanel {
         if (networkOutput != null && !socket.isClosed()) {
             networkOutput.println("CHAT:" + chatText);
             
-            // Tampilkan pesan sendiri di chat area (sebagai feedback)
+            // nampilin pesan sendiri di chat area (feedback doang)
             appendChat("Anda (Pribadi)", chatText); 
             
             chatInputField.setText("");
         } else {
-            JOptionPane.showMessageDialog(this, "Koneksi ke server terputus.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "koneksi server putus bro.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -235,7 +235,7 @@ public class AuctionPanel extends JPanel {
             BorderFactory.createLineBorder(cardColor, 1, true)
         ));
 
-        JLabel header = new JLabel("  " + headerText);
+        JLabel header = new JLabel("  " + headerText);
         header.setFont(new Font("SansSerif", Font.BOLD, 12));
         header.setForeground(Color.WHITE);
         header.setBackground(cardColor);
@@ -261,12 +261,12 @@ public class AuctionPanel extends JPanel {
     }
 
     public void connectAndStartListener(String ip, int port, String username, String idToken) throws IOException {
-    this.username = username; // Simpan username untuk Chat
+    this.username = username; // simpen username buat chatting
     try {
         this.socket = new Socket(ip, port);
         this.networkOutput = new PrintWriter(socket.getOutputStream(), true);
         
-        // Protokol tetap LOGIN:username:idToken (dimana idToken = username)
+        // protokol tetep login:username:idtoken (dimana idtoken = username)
         this.networkOutput.println("LOGIN:" + username + ":" + idToken); 
         
         addLogCard("Mencoba bergabung sebagai: " + username, "INFO");
@@ -286,7 +286,7 @@ public class AuctionPanel extends JPanel {
             addLogCard("Memilih lelang: " + auctionId, "INFO");
             this.selectedAuctionId = auctionId;
         } else {
-            addLogCard("Belum terhubung ke server.", "ERROR");
+            addLogCard("blum connect server.", "ERROR");
         }
     }
 
@@ -299,7 +299,7 @@ public class AuctionPanel extends JPanel {
 
     private void sendBid() {
         if (networkOutput == null || socket == null || socket.isClosed()) {
-            JOptionPane.showMessageDialog(this, "Koneksi ke server terputus.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "koneksi putus.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
@@ -312,9 +312,9 @@ public class AuctionPanel extends JPanel {
             bidField.setText("");
             addLogCard("Anda mengirim tawaran: Rp " + bidText, "INFO");
         } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Tawaran harus berupa angka yang valid.", "Input Tidak Valid", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "tawaran wajib angka ya.", "Input Salah", JOptionPane.WARNING_MESSAGE);
         } catch (Exception e) {
-            addLogCard("Gagal mengirim tawaran.", "ERROR");
+            addLogCard("gagal kirim tawaran.", "ERROR");
             closeConnection();
         }
     }
@@ -426,7 +426,7 @@ public class AuctionPanel extends JPanel {
                         break;
                         
                     case "CHAT_BROADCAST": 
-                        // Format: CHAT_BROADCAST:NamaAdmin:Pesan
+                        // formatnya: chat_broadcast:namaadmin:pesan
                         String[] broadcastParts = data.split(":", 2);
                         if (broadcastParts.length == 2) {
                             panel.appendChat(broadcastParts[0] + " (All)", broadcastParts[1]); 
@@ -436,7 +436,7 @@ public class AuctionPanel extends JPanel {
                         break;
                         
                     case "CHAT_PRIVATE": 
-                        // Format: CHAT_PRIVATE:NamaAdmin:Pesan
+                        // formatnya: chat_private:namaadmin:pesan
                         String[] privateParts = data.split(":", 2);
                         if (privateParts.length == 2) {
                             panel.appendChat("💬 " + privateParts[0], privateParts[1]);
