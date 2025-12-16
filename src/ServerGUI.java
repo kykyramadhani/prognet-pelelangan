@@ -10,20 +10,29 @@ import java.util.List;
 
 public class ServerGUI extends JFrame implements PropertyChangeListener {
 
+    // field input data barang
     private JTextField fieldNamaBarang;
     private JTextField fieldHargaAwal;
     private JTextField fieldDurasi;
+
+    // tombol buat nambah barang lelang
     private RoundedButton btnTambahBarang;
-    private JTextArea areaLog; // Log Aktivitas Server (non-chat)
+
+    // area log aktivitas server (bukan area chat ya tolong)
+    private JTextArea areaLog; 
     
+    // ini baru panel chat admin
     private AdminChatPanel chatPanel;
     
+    // server utama pelelangan
     private MultiServerPelelangan server;
+
+    // nyimpen data barang sebelum dikirim ke server
     private List<BarangInput> barangList = new ArrayList<>();
 
     public ServerGUI() {
         setTitle("Auction Server");
-        setSize(1200, 700); // Ukuran lebih besar untuk panel chat
+        setSize(1200, 700);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         getContentPane().setBackground(new Color(245, 247, 250));
@@ -34,7 +43,7 @@ public class ServerGUI extends JFrame implements PropertyChangeListener {
         title.setBorder(BorderFactory.createEmptyBorder(20, 10, 15, 10));
         add(title, BorderLayout.NORTH);
 
-        // --- Left card (form) ---
+  
         RoundedPanel card = new RoundedPanel(16);
         card.setBackground(Color.WHITE);
         card.setLayout(new GridBagLayout());
@@ -82,7 +91,7 @@ public class ServerGUI extends JFrame implements PropertyChangeListener {
         leftPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         leftPanel.add(card, BorderLayout.NORTH);
 
-        // --- Right panel (log & chat admin) ---
+        //  (log server + chat admin)
         areaLog = new JTextArea();
         areaLog.setEditable(false);
         areaLog.setFont(new Font("SansSerif", Font.PLAIN, 13));
@@ -95,20 +104,18 @@ public class ServerGUI extends JFrame implements PropertyChangeListener {
         scrollLog.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
         RoundedPanel logCard = new RoundedPanel(25);
-        logCard.setOpaque(false); // PENTING
+        logCard.setOpaque(false); 
 
         logCard.setBackground(Color.WHITE);
         logCard.setLayout(new BorderLayout());
         logCard.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
         logCard.add(scrollLog, BorderLayout.CENTER);
 
-        // --- Panel Chat Admin ---
-        server = new MultiServerPelelangan(); // Inisialisasi Server sebelum ChatPanel
+        server = new MultiServerPelelangan(); // server harus nyala dulu sebelum chat
         chatPanel = new AdminChatPanel(server, areaLog); 
-        areaLog.addPropertyChangeListener(this); // Daftarkan listener
+        areaLog.addPropertyChangeListener(this); // dengerin event dari server
 
-        // Susun Right Panel: Log Aktivitas Server (Atas) & Chat Panel (Bawah)
-        JPanel rightPanelContent = new JPanel(new GridLayout(2, 1, 0, 10)); // Split Vertikal
+        JPanel rightPanelContent = new JPanel(new GridLayout(2, 1, 0, 10));
         rightPanelContent.add(logCard);
         rightPanelContent.add(chatPanel); 
 
@@ -117,7 +124,7 @@ public class ServerGUI extends JFrame implements PropertyChangeListener {
         rightPanel.setBackground(new Color(245, 247, 250));
         rightPanel.add(rightPanelContent, BorderLayout.CENTER); 
 
-        // Split pane
+        // split layar kiri (form) dan kanan (log + chat)
         JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, rightPanel);
         split.setDividerLocation(360);
         split.setResizeWeight(0.3);
@@ -126,9 +133,10 @@ public class ServerGUI extends JFrame implements PropertyChangeListener {
 
         add(split, BorderLayout.CENTER);
 
+        // klik tombol = tambah barang
         btnTambahBarang.addActionListener((ActionEvent e) -> tambahBarang());
 
-        // start server thread
+        // jalanin server di thread terpisah biar gui ga freeze
         new Thread(() -> {
             try {
                 server.startServer();
@@ -144,6 +152,7 @@ public class ServerGUI extends JFrame implements PropertyChangeListener {
         return lbl;
     }
 
+   
     private RoundedButton createModernButton(String text) {
         RoundedButton btn = new RoundedButton(text, 10, new Color(66, 133, 244), new Color(66, 133, 200));
         btn.setFont(new Font("SansSerif", Font.BOLD, 14));
@@ -153,6 +162,7 @@ public class ServerGUI extends JFrame implements PropertyChangeListener {
         btn.setBorderPainted(false);
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
+        // efek hover biar tombol keliatan hidup
         btn.addMouseListener(new MouseAdapter() {
             public void mouseEntered(MouseEvent e) { btn.setBackground(new Color(52, 113, 210)); }
             public void mouseExited(MouseEvent e) { btn.setBackground(new Color(66, 133, 244)); }
@@ -160,11 +170,13 @@ public class ServerGUI extends JFrame implements PropertyChangeListener {
         return btn;
     }
 
+    // logic utama buat nambah barang lelang dari form
     private void tambahBarang() {
         String nama = fieldNamaBarang.getText().trim();
         String hargaStr = fieldHargaAwal.getText().trim();
         String durasiStr = fieldDurasi.getText().trim();
 
+        // validasi input kosong
         if (nama.isEmpty() || hargaStr.isEmpty() || durasiStr.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Semua field harus diisi!", "Input Error", JOptionPane.ERROR_MESSAGE);
             return;
@@ -179,15 +191,19 @@ public class ServerGUI extends JFrame implements PropertyChangeListener {
             return;
         }
 
+        // simpen barang ke list sementara
         barangList.add(new BarangInput(nama, harga, durasi));
         areaLog.append("Barang ditambahkan: " + nama + " | Harga: " + harga + " | Durasi: " + durasi + " detik\n");
 
+        // reset field input
         fieldNamaBarang.setText("");
         fieldHargaAwal.setText("");
         fieldDurasi.setText("");
 
+        // nanya mau nambah barang lagi atau engga
         int pilihan = JOptionPane.showConfirmDialog(this, "Tambah barang lelang lagi?", "Konfirmasi", JOptionPane.YES_NO_OPTION);
         if (pilihan == JOptionPane.NO_OPTION) {
+            // kirim semua barang ke server
             for (BarangInput b : barangList) {
                 server.addAuctionFromGUI(b.nama, b.hargaAwal, b.durasi, areaLog);
             }
@@ -196,15 +212,15 @@ public class ServerGUI extends JFrame implements PropertyChangeListener {
         }
     }
     
-    // Metode untuk menerima notifikasi dari PenawarClientHandler
+   
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         if (evt.getPropertyName().equals("clientListUpdate")) {
-            // Dipanggil ketika klien login/logout
+            // update list client di panel chat
             chatPanel.updateClientList(server.getClientNames());
             
         } else if (evt.getPropertyName().equals("newClientChat")) {
-            // Klien mengirim pesan baru
+            // nerima chat baru dari client
             String clientName = (String) evt.getOldValue();
             String message = (String) evt.getNewValue();
             chatPanel.appendClientChat(clientName, message);
@@ -222,6 +238,7 @@ public class ServerGUI extends JFrame implements PropertyChangeListener {
             this.durasi = durasi;
         }
     }
+
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {

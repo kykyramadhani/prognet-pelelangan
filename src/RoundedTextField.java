@@ -9,8 +9,8 @@ public class RoundedTextField extends JTextField {
 
     public RoundedTextField(String text, int columns) {
         super(text, columns);
-        setOpaque(false); // Transparan agar Rounded Corner terlihat
-        setBorder(new EmptyBorder(5, 10, 5, 10)); // Padding internal
+        setOpaque(false); // transparan supaya Rounded Corner terlihat
+        setBorder(new EmptyBorder(5, 10, 5, 10)); // padding internal
     }
 
     public RoundedTextField(int columns) {
@@ -22,7 +22,7 @@ public class RoundedTextField extends JTextField {
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         
-        // Menggambar background putih dengan sudut membulat
+        // gambar background putih sudut membulat
         g2.setColor(getBackground());
         g2.fill(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, cornerRadius, cornerRadius));
         
@@ -35,7 +35,7 @@ public class RoundedTextField extends JTextField {
         Graphics2D g2 = (Graphics2D) g.create();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         
-        // Menggambar border dengan sudut membulat
+        // gambar border sudut membulat
         g2.setColor(borderColor);
         g2.draw(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, cornerRadius, cornerRadius));
         
