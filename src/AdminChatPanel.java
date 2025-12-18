@@ -122,14 +122,14 @@ public class AdminChatPanel extends JPanel {
         chatHistory.setText("");
 
         if (selectedClient.equals(BROADCAST_KEY)) {
-            chatHistory.append("=== mode broadcast: pesan dikirim ke semua user ===\n\n");
+            chatHistory.append("=== Mode Broadcast: Pesan terkirim ke semua client ===\n\n");
 
             btnBroadcast.setVisible(true);
             btnBroadcast.setEnabled(true);
             btnKirimPesan.setVisible(false);
 
         } else {
-            chatHistory.append("=== chat japri ama: " + selectedClient + " ===\n\n");
+            chatHistory.append("=== Chat Pribadi dengan: " + selectedClient + " ===\n\n");
             chatHistory.append(privateChatHistoryMap.getOrDefault(selectedClient, ""));
 
             btnBroadcast.setVisible(false);
@@ -152,7 +152,7 @@ public class AdminChatPanel extends JPanel {
                 appendChatHistory(selectedClient, "[Admin]", msg);
             } else {
                 JOptionPane.showMessageDialog(this,
-                        "Klien gak ketemu atau udh disconnect.",
+                        "Klien tidak ditemukan atau telah terputus.",
                         "Error", JOptionPane.ERROR_MESSAGE);
             }
         }

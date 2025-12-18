@@ -50,7 +50,7 @@ public class AuctionClientGUI extends JFrame {
             showView(SELECT_VIEW);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this,
-                    "gagal konek ke server: " + e.getMessage(),
+                    "gagal coonect ke server: " + e.getMessage(),
                     "kesalahan koneksi", JOptionPane.ERROR_MESSAGE);
         }
     }

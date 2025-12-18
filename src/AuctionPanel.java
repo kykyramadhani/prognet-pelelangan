@@ -286,7 +286,7 @@ public class AuctionPanel extends JPanel {
             addLogCard("Memilih lelang: " + auctionId, "INFO");
             this.selectedAuctionId = auctionId;
         } else {
-            addLogCard("blum connect server.", "ERROR");
+            addLogCard("Belum terhubung ke server.", "ERROR");
         }
     }
 
@@ -312,9 +312,9 @@ public class AuctionPanel extends JPanel {
             bidField.setText("");
             addLogCard("Anda mengirim tawaran: Rp " + bidText, "INFO");
         } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "tawaran wajib angka ya.", "Input Salah", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Tawaran wajib berupa angka.", "Input Salah", JOptionPane.WARNING_MESSAGE);
         } catch (Exception e) {
-            addLogCard("gagal kirim tawaran.", "ERROR");
+            addLogCard("Gagal mengirim tawaran.", "ERROR");
             closeConnection();
         }
     }
