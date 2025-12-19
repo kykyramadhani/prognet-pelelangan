@@ -198,7 +198,7 @@ public class AuctionPanel extends JPanel {
             
             chatInputField.setText("");
         } else {
-            JOptionPane.showMessageDialog(this, "koneksi server putus bro.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "koneksi server putus.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
